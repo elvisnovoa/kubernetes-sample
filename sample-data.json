@@ -1,0 +1,4 @@
+[
+  { "username": "ironman", "password": "endgame", "firstName": "Tony", "lastName": "Stark"},
+  { "username": "hulk", "password": "smash","firstName": "Bruce", "lastName": "Banner"}
+]
