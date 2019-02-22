@@ -20,6 +20,6 @@ public class LoginController {
 
     @PostMapping("/login")
     public User login(@RequestBody LoginRequest request) {
-       return userRepository.findByUsernameAndPassword(request.username, request.password).get(0);
+       return userRepository.findByUsernameAndPassword(request.username, request.password);
     }
 }
