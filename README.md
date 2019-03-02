@@ -25,7 +25,7 @@ Date: Tue, 19 Feb 2019 03:20:04 GMT
 
 ## Docker build
 ```
-$ mvn install dockerfile:build  
+$ mvn install dockerfile:build
 ```
 
 ## Docker run
@@ -35,6 +35,7 @@ $ docker run -d -e "spring.data.mongodb.host=host.docker.internal" -p 8080:8080 
 
 ## Docker Compose
 ``` 
+$ docker-compose pull
 $ docker-compose build
 $ docker-compose up
 ```
