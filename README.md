@@ -32,3 +32,9 @@ $ mvn install dockerfile:build
 ```
 $ docker run -d -e "spring.data.mongodb.host=host.docker.internal" -p 8080:8080 everis/sample-service:latest 
 ```
+
+## Docker Compose
+``` 
+$ docker-compose build
+$ docker-compose up
+```
