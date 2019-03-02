@@ -1,9 +1,15 @@
+# Prerequisites
 
-Run the following command to import sample data
-```commandline
-$ mongoimport --jsonArray --db test --collection user --file sample-data.json
-```
+- Java 1.8
+- MongoDB
+- Docker
 
+# Backend Service
+
+## Sample Data
+Sample data is inserted to MongoDB at startup with Mongeez.
+
+## REST API 
 Start the app and POST to the following endpoint for login
 ```commandline
 $ curl -i -X POST -H "Content-Type:application/json" -d "{  \"username\" : \"ironman\",  \"password\" : \"endgame\" }" http://localhost:8080/login
