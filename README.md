@@ -1,6 +1,7 @@
 # Prerequisites
 
 - Java 1.8
+- Maven
 - MongoDB
 - Docker
 
@@ -20,4 +21,14 @@ Transfer-Encoding: chunked
 Date: Tue, 19 Feb 2019 03:20:04 GMT
 
 {"id":"5c6b6f7da1be94f4f5ee2e64","username":"ironman","password":"endgame","firstName":"Tony","lastName":"Stark"}
+```
+
+## Docker build
+```
+$ mvn install dockerfile:build  
+```
+
+## Docker run
+```
+$ docker run -d -e "spring.data.mongodb.host=host.docker.internal" -p 8080:8080 everis/sample-service:latest 
 ```
