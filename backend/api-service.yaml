@@ -1,19 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kompose.cmd: kompose --file docker-compose.yml convert
-    kompose.version: 1.17.0 ()
-  creationTimestamp: null
+  name: sample-service
   labels:
-    io.kompose.service: api
-  name: api
+    app: sample-service
 spec:
   ports:
   - name: "8080"
     port: 8080
-    targetPort: 8080
+    targetPort: http-server
   selector:
-    io.kompose.service: api
-status:
-  loadBalancer: {}
+    app: sample-service
+  type: LoadBalancer

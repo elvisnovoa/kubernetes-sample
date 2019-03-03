@@ -1,38 +1,23 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose --file docker-compose.yml convert
-    kompose.version: 1.17.0 ()
-  creationTimestamp: null
+  name: sample-service
   labels:
-    io.kompose.service: api
-  name: api
+    app: sample-service
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        io.kompose.service: api
+        app: sample-service
     spec:
       containers:
       - env:
         - name: spring.data.mongodb.host
           value: mongo
-        image: api
-        name: api
+        image: everis/sample-service
+        name: sample-service
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
-        resources: {}
-        volumeMounts:
-        - mountPath: /code
-          name: api-claim0
-      restartPolicy: Always
-      volumes:
-      - name: api-claim0
-        persistentVolumeClaim:
-          claimName: api-claim0
-status: {}
+          name: http-server

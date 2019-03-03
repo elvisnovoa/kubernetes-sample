@@ -58,8 +58,32 @@ $ terraform apply terraform.tfplan
 
 Update the ARN of the Node instance role (not instance profile) with the output from terraform on aws-auth-cm.yml
 
+### AWS EKS
 ``` 
 $ aws eks --region us-east-1 update-kubeconfig --name eks-demo
 $ kubectl get svc
 $ kubectl apply -f aws-auth-cm.yaml
+```
+
+### Docker/k8s
+
+Enable Kubernetes on Docker. If you are using multiple contexts, use `kubectl config use-context docker-for-desktop
+` to switch to docker.
+
+### Deploy the app
+
+``` 
+$ kubectl apply -f mongo-deployment.yaml
+$ kubectl apply -f mongo-service.yaml
+$ kubectl apply -f api-deployment.yaml
+$ kubectl apply -f api-service.yaml
+```
+
+### Cleanup
+
+``` 
+$ kubectl delete -f api-service.yaml
+$ kubectl delete -f api-deployment.yaml
+$ kubectl delete -f mongo-service.yaml
+$ kubectl delete -f mongo-deployment.yml
 ```
