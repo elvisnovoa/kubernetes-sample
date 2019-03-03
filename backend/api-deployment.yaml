@@ -15,9 +15,8 @@ spec:
       - env:
         - name: spring.data.mongodb.host
           value: mongo
-        image: everis/sample-service
+        image: everisbham/sample-service
         name: sample-service
-        imagePullPolicy: Never
         ports:
         - containerPort: 8080
           name: http-server
