@@ -2,8 +2,10 @@
 
 - Java 1.8
 - Maven
-- MongoDB
+- MongoDB (only required for running locally)
 - Docker
+- Terraform
+- An AWS account and valid secret key and access key
 
 # Backend Service
 
@@ -38,4 +40,14 @@ $ docker run -d -e "spring.data.mongodb.host=host.docker.internal" -p 8080:8080 
 $ docker-compose pull
 $ docker-compose build
 $ docker-compose up
+```
+
+# Infrastructure
+
+Terraform scripts to build a VPC based on [this cloud formation template](https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2019-02-11/amazon-eks-vpc-sample.yaml).
+
+``` 
+$ terraform init
+$ terraform plan -out terraform.tfplan
+$ terraform apply terraform.tfplan
 ```
