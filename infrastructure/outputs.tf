@@ -3,7 +3,7 @@ output "subnets" {
 }
 
 output "control_plane_security_group" {
-  value = "${aws_security_group.control_plane.id}"
+  value = "${aws_security_group.sg_control_plane.id}"
 }
 
 output "vpc" {
