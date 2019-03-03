@@ -9,3 +9,7 @@ output "control_plane_security_group" {
 output "vpc" {
   value = "${aws_vpc.eks_vpc.id}"
 }
+
+output "instance_role" {
+  value = "${aws_iam_role.node_instance_role.arn}"
+}

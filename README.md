@@ -44,10 +44,22 @@ $ docker-compose up
 
 # Infrastructure
 
+## Terraform
+
 Terraform scripts to build a VPC based on [this cloud formation template](https://amazon-eks.s3-us-west-2.amazonaws.com/cloudformation/2019-02-11/amazon-eks-vpc-sample.yaml).
 
 ``` 
 $ terraform init
 $ terraform plan -out terraform.tfplan
 $ terraform apply terraform.tfplan
+```
+
+## Kubectl
+
+Update the ARN of the Node instance role (not instance profile) with the output from terraform on aws-auth-cm.yml
+
+``` 
+$ aws eks --region us-east-1 update-kubeconfig --name eks-demo
+$ kubectl get svc
+$ kubectl apply -f aws-auth-cm.yaml
 ```
