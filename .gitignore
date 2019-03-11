@@ -1,7 +1,12 @@
 target/
 *.iml
 .idea/
+
 .terraform/
 *.tfplan
 *.tfstate*
 *.tfvars
+
+node_modules/
+build/
+*.lock
