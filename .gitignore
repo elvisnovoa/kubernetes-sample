@@ -5,3 +5,5 @@ target/
 *.tfplan
 *.tfstate*
 *.tfvars
+
+provision/**/*.tgz
