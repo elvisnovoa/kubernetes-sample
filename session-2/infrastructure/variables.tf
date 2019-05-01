@@ -23,3 +23,7 @@ variable "eks_policies" {
     "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   ]
 }
+
+variable "eks_admin_role_arn" {
+  type = "string"
+}

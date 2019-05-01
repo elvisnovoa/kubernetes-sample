@@ -7,7 +7,7 @@
 ##################################################
 
 terraform {
-  required_version = "0.11.11"
+  required_version = ">= 0.11.11"
 }
 
 provider "aws" {
@@ -19,12 +19,13 @@ data "aws_caller_identity" "current" {}
 
 data "aws_availability_zones" "available" {}
 
+# Create a simple VPC
 resource "aws_vpc" "eks_vpc" {
   cidr_block = "192.168.0.0/16"
   enable_dns_hostnames = "true"
   enable_dns_support = "true"
 
-  tags = "${map("Name", "${var.cluster_name}-vpc")}"
+  tags = "${map("Name", "${var.cluster_name}-vpc", "kubernetes.io/cluster/${var.cluster_name}", "shared")}" // Tag this vpc so k8s can discover it
 }
 
 resource "aws_internet_gateway" "default" {
@@ -50,7 +51,7 @@ resource "aws_subnet" "public" {
   cidr_block = "${var.subnets[count.index]}"
   map_public_ip_on_launch = "true"
 
-  tags = "${map("Name", "${var.cluster_name}-public-${count.index}")}"
+  tags = "${map("Name", "${var.cluster_name}-public-${count.index}", "kubernetes.io/cluster/${var.cluster_name}", "shared")}" // Tag these subnets so k8s can discover them
 }
 
 resource "aws_route_table_association" "public" {
@@ -60,102 +61,100 @@ resource "aws_route_table_association" "public" {
 }
 
 
-resource "aws_eks_cluster" "my_cluster" {
-  name = "${var.cluster_name}"
+
+
+
+
+
+
+
+
+
+# Roles for Cluster and Nodes
+resource "aws_iam_role" "eks_cluster_iam_role" {
+  name = "eks-cluster-iam-role"
+
+  assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "eks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = "${aws_iam_role.eks_cluster_iam_role.name}"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSServicePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  role       = "${aws_iam_role.eks_cluster_iam_role.name}"
+}
+
+resource "aws_eks_cluster" "eks_cluster" {
+  name     = "${var.cluster_name}"
+//  role_arn = "${aws_iam_role.eks_cluster_iam_role.arn}"
   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/eksServiceRole"
 
   vpc_config {
-    subnet_ids = [
-      "${aws_subnet.public.*.id}"]
+    security_group_ids = ["${aws_security_group.eks_cluster_security_group.id}"]
+    subnet_ids         = ["${aws_subnet.public.*.id}"]
   }
 }
 
-resource "aws_iam_instance_profile" "node_instance_profile" {
-  name = "node_instance_profile"
-  role = "${aws_iam_role.node_instance_role.name}"
-}
 
-resource "aws_iam_role" "node_instance_role" {
-  name = "node_instance_role"
-  path = "/"
-  force_detach_policies = true
 
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-               "Service": "ec2.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-        }
-    ]
-}
-EOF
 
-  tags = "${map("Name", "${var.cluster_name}-node-instance-role")}"
-}
-
-resource "aws_iam_role_policy_attachment" "node_instance_role" {
-  role = "${aws_iam_role.node_instance_role.name}"
-  count = "${length(var.eks_policies)}"
-  policy_arn = "${var.eks_policies[count.index]}"
-}
-
-resource "aws_launch_configuration" "node_launch_config" {
-  image_id = "ami-0eeeef929db40543c"
-  instance_type = "t2.micro"
-  iam_instance_profile = "${aws_iam_instance_profile.node_instance_profile.id}"
-
-  associate_public_ip_address = true
-  security_groups = [
-    "${aws_security_group.sg_nodes.id}"]
-  key_name = "${var.key_name}"
-
-  root_block_device {
-    volume_size = "20"
-    volume_type = "gp2"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  user_data = <<EOF
+# Worker Nodes
+locals {
+  eks_cluster_node_userdata = <<USERDATA
 #!/bin/bash
-
-sudo yum -y update
-
 set -o xtrace
-sudo /etc/eks/bootstrap.sh ${aws_eks_cluster.my_cluster.name}
-
-EOF
+/etc/eks/bootstrap.sh ${var.cluster_name}
+USERDATA
 }
 
-resource "aws_autoscaling_group" "node_asg" {
-  desired_capacity = 0
-  launch_configuration = "${aws_launch_configuration.node_launch_config.name}"
-  min_size = 0
-  max_size = 6
-  vpc_zone_identifier = ["${aws_subnet.public.*.id}"]
+resource "aws_launch_configuration" "eks_cluster_node_launch_configuration" {
+  associate_public_ip_address = true
+  iam_instance_profile        = "${aws_iam_instance_profile.eks_cluster_node_instance_profile.name}"
+  image_id                    = "ami-0abcb9f9190e867ab"
+  instance_type               = "t3.medium"
+  name_prefix                 = "eks-cluster-node"
+  security_groups             = ["${aws_security_group.eks_cluster_node_security_group.id}"]
+  user_data_base64            = "${base64encode(local.eks_cluster_node_userdata)}"
 
   lifecycle {
     create_before_destroy = true
   }
-
-  tags = [
-    {
-     "key" = "Name",
-      value = "${var.cluster_name}-node",
-      "propagate_at_launch" = true
-    }, {
-      "key" = "kubernetes.io/cluster/${var.cluster_name}",
-      value = "owned",
-      "propagate_at_launch" = true
-    }
-
-  ]
 }
+
+resource "aws_autoscaling_group" "eks_cluster_autoscaling_group" {
+  desired_capacity     = 2
+  launch_configuration = "${aws_launch_configuration.eks_cluster_node_launch_configuration.id}"
+  max_size             = 2
+  min_size             = 1
+  name                 = "eks-cluster-autoscaling-group"
+  vpc_zone_identifier  = ["${aws_subnet.public.*.id}"]
+
+  tag {
+    key                 = "Name"
+    value               = "eks-cluster-autoscaling-group"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "kubernetes.io/cluster/${var.cluster_name}"
+    value               = "owned"
+    propagate_at_launch = true
+  }
+}
+

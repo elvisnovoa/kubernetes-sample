@@ -1,94 +1,78 @@
-
-resource "aws_security_group" "sg_control_plane" {
-  name = "sg.${var.cluster_name}.control_plane"
+resource "aws_security_group" "eks_cluster_security_group" {
+  name        = "eks-cluster-security-group"
   description = "Cluster communication with worker nodes"
-  vpc_id = "${aws_vpc.eks_vpc.id}"
-
-  tags = "${map("Name", "${var.cluster_name}-control-plane")}"
-}
-
-# Control Plane SG rules. Declared separately to avoid precedence circularity
-resource "aws_security_group_rule" "sgr_control_plane_egress_workers" {
-  security_group_id = "${aws_security_group.sg_control_plane.id}"
-
-  from_port = 1025
-  protocol = "TCP"
-  to_port = 65535
-  type = "egress"
-  description = "Allow the cluster control plane to communicate with worker Kubelet and pods"
-  source_security_group_id = "${aws_security_group.sg_nodes.id}"
-}
-
-resource "aws_security_group_rule" "sgr_control_plane_egress_https" {
-  security_group_id = "${aws_security_group.sg_control_plane.id}"
-
-  from_port = 443
-  protocol = "TCP"
-  to_port = 443
-  type = "egress"
-  description = "Allow the cluster control plane to communicate with pods running extension API servers on port 443"
-  source_security_group_id = "${aws_security_group.sg_nodes.id}"
-}
-
-resource "aws_security_group_rule" "sgr_control_plane_ingress_https" {
-  security_group_id = "${aws_security_group.sg_control_plane.id}"
-
-  from_port = 443
-  protocol = "TCP"
-  to_port = 443
-  type = "ingress"
-  description = "Allow pods to communicate with the cluster API Server"
-  source_security_group_id = "${aws_security_group.sg_nodes.id}"
-}
-
-resource "aws_security_group" "sg_nodes" {
-  name = "sg.${var.cluster_name}.eks_nodes"
-  description = "Security group for all nodes in the cluster"
-  vpc_id = "${aws_vpc.eks_vpc.id}"
-
-  tags = "${map("Name", "${var.cluster_name}-nodes", "kubernetes.io/cluster/${var.cluster_name}", "owned")}"
+  vpc_id      = "${aws_vpc.eks_vpc.id}"
 
   egress {
-    from_port = 0
-    protocol = "-1"
-    to_port = 0
-    cidr_blocks     = ["0.0.0.0/0"]
-    description     = "Allow all outbound traffic"
-  }
-
-  ingress {
-    from_port = 1025
-    protocol = "TCP"
-    to_port = 65535
-    security_groups = ["${aws_security_group.sg_control_plane.id}"]
-    description = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
-  }
-
-  ingress {
-    from_port = 443
-    protocol = "TCP"
-    to_port = 443
-    security_groups = ["${aws_security_group.sg_control_plane.id}"]
-    description = "Allow pods running extension API servers on port 443 to receive communication from cluster control plane"
-  }
-
-  ingress {
-    from_port = 22
-    protocol = "TCP"
-    to_port = 22
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow SSH from everywhere (never do this!)"
+  }
+
+  tags {
+    Name = "eks-cluster"
   }
 }
 
-# Declared separately to avoid self-reference error
-resource "aws_security_group_rule" "sgr_node_ingress" {
-  security_group_id = "${aws_security_group.sg_nodes.id}"
+# OPTIONAL: Allow inbound traffic from your local workstation external IP
+#           to the Kubernetes. You will need to replace A.B.C.D below with
+#           your real IP. Services like icanhazip.com can help you find this.
+resource "aws_security_group_rule" "eks_cluster_security_group_ingress_workstation_https" {
+  cidr_blocks       = ["172.31.0.0/16"]
+  description       = "Allow bastion to communicate with the eks cluster API Server"
+  from_port         = 443
+  protocol          = "tcp"
+  security_group_id = "${aws_security_group.eks_cluster_security_group.id}"
+  to_port           = 443
+  type              = "ingress"
+}
 
-  type = "ingress"
-  protocol = "-1"
-  from_port = 0
-  to_port = 0
-  source_security_group_id = "${aws_security_group.sg_nodes.id}"
-  description = "Allow nodes to communicate with each other"
+resource "aws_security_group" "eks_cluster_node_security_group" {
+  name        = "eks-cluster-node-security-group"
+  description = "Security group for all nodes in the eks cluster"
+  vpc_id      = "${aws_vpc.eks_vpc.id}"
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = "${
+    map(
+     "Name", "eks-cluster-node-security-group"
+    )
+  }"
+}
+
+resource "aws_security_group_rule" "eks_cluster_node_ingress_self" {
+  description              = "Allow nodes to communicate with each other"
+  from_port                = 0
+  protocol                 = "-1"
+  security_group_id        = "${aws_security_group.eks_cluster_node_security_group.id}"
+  source_security_group_id = "${aws_security_group.eks_cluster_node_security_group.id}"
+  to_port                  = 65535
+  type                     = "ingress"
+}
+
+resource "aws_security_group_rule" "eks_cluster_node_ingress_cluster" {
+  description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
+  from_port                = 1025
+  protocol                 = "tcp"
+  security_group_id        = "${aws_security_group.eks_cluster_node_security_group.id}"
+  source_security_group_id = "${aws_security_group.eks_cluster_security_group.id}"
+  to_port                  = 65535
+  type                     = "ingress"
+}
+
+resource "aws_security_group_rule" "eks_cluster_node_ingress_node_https" {
+  description              = "Allow pods to communicate with the cluster API Server"
+  from_port                = 443
+  protocol                 = "tcp"
+  security_group_id        = "${aws_security_group.eks_cluster_security_group.id}"
+  source_security_group_id = "${aws_security_group.eks_cluster_node_security_group.id}"
+  to_port                  = 443
+  type                     = "ingress"
 }
