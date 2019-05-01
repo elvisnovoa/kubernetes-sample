@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: mongo
+  labels:
+    app: mongo
+spec:
+  ports:
+    - name: "mongo-server"
+      port: 27017
+      targetPort: mongo
+  selector:
+    app: mongo

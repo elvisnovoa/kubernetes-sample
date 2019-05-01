@@ -6,7 +6,5 @@ services:
       - spring.data.mongodb.host=mongo
     ports:
       - "8080:8080"
-    volumes:
-      - .:/code
   mongo:
     image: mongo

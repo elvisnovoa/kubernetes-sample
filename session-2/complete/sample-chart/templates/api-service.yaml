@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-service
+  labels:
+    app: sample-service
+spec:
+  ports:
+  - name: "8080"
+    port: 8080
+    targetPort: http-server
+  selector:
+    app: sample-service
+  type: LoadBalancer

@@ -66,7 +66,8 @@ $ kubectl apply -f aws-auth-cm.yaml
 $ kubectl apply -f rbac-config.yaml
 $ helm init --service-account tiller
 $ kubectl get pods --namespace kube-system | grep tiller
-$ helm install ../provision/sample-chart
+$ helm create mychart
+$ helm install mychart
 ```
 
 ### Docker/k8s
