@@ -60,9 +60,13 @@ Update the ARN of the Node instance role (not instance profile) with the output 
 
 ### AWS EKS
 ``` 
-$ aws eks --region us-east-1 update-kubeconfig --name eks-demo
+$ aws eks --region us-east-1 update-kubeconfig --name my-eks-demo
 $ kubectl get svc
 $ kubectl apply -f aws-auth-cm.yaml
+$ kubectl apply -f rbac-config.yaml
+$ helm init --service-account tiller
+$ kubectl get pods --namespace kube-system | grep tiller
+$ helm install ../provision/sample-chart
 ```
 
 ### Docker/k8s

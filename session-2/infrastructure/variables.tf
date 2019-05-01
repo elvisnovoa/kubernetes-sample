@@ -24,6 +24,6 @@ variable "eks_policies" {
   ]
 }
 
-variable "eks_admin_role_arn" {
-  type = "string"
-}
+//variable "eks_admin_role_arn" {
+//  type = "string"
+//}

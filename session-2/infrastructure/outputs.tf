@@ -2,14 +2,14 @@ output "subnets" {
   value = "${aws_subnet.public.*.id}"
 }
 
-//output "control_plane_security_group" {
-//  value = "${aws_security_group.sg_control_plane.id}"
-//}
-
 output "vpc" {
   value = "${aws_vpc.eks_vpc.id}"
 }
 
-//output "instance_role" {
-//  value = "${aws_iam_role.node_instance_role.arn}"
-//}
+output "node_role" {
+  value = "${aws_iam_role.role_eks_worker_node.arn}"
+}
+
+output "eks_endpoint" {
+  value = "${aws_eks_cluster.eks_cluster.endpoint}"
+}
