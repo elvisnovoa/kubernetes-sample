@@ -7,13 +7,15 @@ variable "vpc_cidr" {
 }
 
 variable "public_subnets" {
-  type = "list"
+  type    = list(string)
   default = ["192.168.0.0/24", "192.168.2.0/24"]
 }
 
 variable "private_subnets" {
-  type = "list"
+  type    = list(string)
   default = ["192.168.1.0/24", "192.168.3.0/24"]
 }
 
-variable "key_name" {}
+variable "key_name" {
+}
+
