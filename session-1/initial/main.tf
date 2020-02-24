@@ -47,7 +47,7 @@ resource "aws_vpc" "example" {
   cidr_block = "${var.vpc_cidr}"
 
   tags {
-    Name = "dev-1"
+    Name = "dev"
     Environment = "${var.environment}"
   }
 }
@@ -57,7 +57,7 @@ resource "aws_route_table" "public" {
   vpc_id = "${aws_vpc.example.id}"
 
   tags {
-    Name = "dev-1-public"
+    Name = "dev-public"
     Environment = "${var.environment}"
   }
 }
@@ -66,7 +66,7 @@ resource "aws_route_table" "private" {
   vpc_id = "${aws_vpc.example.id}"
 
   tags {
-    Name = "dev-1-private"
+    Name = "dev-private"
     Environment = "${var.environment}"
   }
 }
@@ -82,7 +82,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags {
-    Name = "dev-1-public"
+    Name = "dev-public"
     Environment = "${var.environment}"
   }
 }
@@ -96,7 +96,7 @@ resource "aws_subnet" "private" {
   availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
 
   tags {
-    Name = "dev-1-private"
+    Name = "dev-private"
     Environment = "${var.environment}"
   }
 }
@@ -122,7 +122,7 @@ resource "aws_internet_gateway" "internet_gw" {
   vpc_id = "${aws_vpc.example.id}"
 
   tags {
-    Name = "dev-1-igw"
+    Name = "dev-igw"
     Environment = "${var.environment}"
   }
 }
@@ -134,7 +134,7 @@ resource "aws_eip" "nat" {
   vpc = true
 
   tags {
-    Name = "dev-1-natgw"
+    Name = "dev-natgw"
   }
 }
 
@@ -145,7 +145,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id = "${aws_subnet.public.0.id}" # normally, we'd want to have one NAT gateway and private route table per AZ, but I'm cheap so we'll just use one
 
   tags {
-    Name = "dev-1-natgw"
+    Name = "dev-natgw"
     Environment = "${var.environment}"
   }
 }

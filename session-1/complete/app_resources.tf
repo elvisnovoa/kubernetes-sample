@@ -21,11 +21,13 @@ resource "aws_launch_configuration" "app_lc" {
 
 # Autoscale Tomcat instances
 resource "aws_autoscaling_group" "app_asg" {
+  depends_on = [ "aws_nat_gateway.nat"]
+
   max_size = 2
   min_size = 1
   desired_capacity = 2
 
-  name = "app-asg"
+  name_prefix = "${aws_launch_configuration.app_lc.name}-"
   vpc_zone_identifier = ["${aws_subnet.private.*.id}"]
   launch_configuration = "${aws_launch_configuration.app_lc.id}"
   target_group_arns = [ "${aws_alb_target_group.app_tg.id}" ]
@@ -42,7 +44,7 @@ resource "aws_autoscaling_group" "app_asg" {
 # Target group for Load Balancer
 resource "aws_alb_target_group" "app_tg" {
   name = "app-tg"
-  port = "80"
+  port = "8080"
   protocol = "HTTP"
   vpc_id = "${aws_vpc.example.id}"
 
@@ -84,63 +86,4 @@ resource "aws_alb_listener" "app_alb_listener" {
     target_group_arn = "${aws_alb_target_group.app_tg.arn}"
     type             = "forward"
   }
-}
-
-# BONUS: scale elastically
-# scale up alarm
-resource "aws_autoscaling_policy" "asg_cpu_policy" {
-  name                   = "app-cpu-policy"
-  autoscaling_group_name = "${aws_autoscaling_group.app_asg.name}"
-  adjustment_type        = "ChangeInCapacity"
-  scaling_adjustment     = "1"
-  cooldown               = "90"
-  policy_type            = "SimpleScaling"
-}
-
-resource "aws_cloudwatch_metric_alarm" "app_cpu_alarm" {
-  alarm_name          = "app-cpu-alarm"
-  alarm_description   = "app-cpu-alarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUReservation"
-  namespace           = "AWS/EC2"
-  period              = "60"
-  statistic           = "Average"
-  threshold           = "75"
-
-  dimensions = {
-    "AutoScalingGroupName" = "${aws_autoscaling_group.app_asg.name}"
-  }
-
-  actions_enabled = true
-  alarm_actions   = ["${aws_autoscaling_policy.asg_cpu_policy.arn}"]
-}
-
-# scale down alarm
-resource "aws_autoscaling_policy" "app_cpu_policy_scaledown" {
-  name                   = "app-cpu-policy-scaledown"
-  autoscaling_group_name = "${aws_autoscaling_group.app_asg.name}"
-  adjustment_type        = "ChangeInCapacity"
-  scaling_adjustment     = "-1"
-  cooldown               = "300"
-  policy_type            = "SimpleScaling"
-}
-
-resource "aws_cloudwatch_metric_alarm" "app_cpu_alarm_scaledown" {
-  alarm_name          = "app-cpu-alarm-scaledown"
-  alarm_description   = "app-cpu-alarm-scaledown"
-  comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUReservation"
-  namespace           = "AWS/EC2"
-  period              = "60"
-  statistic           = "Average"
-  threshold           = "50"
-
-  dimensions = {
-    "AutoScalingGroupName" = "${aws_autoscaling_group.app_asg.name}"
-  }
-
-  actions_enabled = true
-  alarm_actions   = ["${aws_autoscaling_policy.app_cpu_policy_scaledown.arn}"]
 }

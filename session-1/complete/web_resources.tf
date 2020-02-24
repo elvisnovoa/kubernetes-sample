@@ -30,7 +30,7 @@ resource "aws_autoscaling_group" "web_asg" {
   min_size = 1
   desired_capacity = 2
 
-  name = "web-asg"
+  name_prefix = "${aws_launch_configuration.web_lc.name}-"
   vpc_zone_identifier = ["${aws_subnet.public.*.id}"]
   launch_configuration = "${aws_launch_configuration.web_lc.id}"
   target_group_arns = [ "${aws_alb_target_group.web_tg.id}" ]
