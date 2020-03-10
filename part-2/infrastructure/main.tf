@@ -8,6 +8,13 @@
 
 terraform {
   required_version = ">= 0.12"
+
+  backend "s3" {
+    region  = "us-east-1"
+    bucket  = "com.elvisnovoa.demo.tf.state"
+    key     = "terraform.tfstate"
+    encrypt = true
+  }
 }
 
 provider "aws" {
